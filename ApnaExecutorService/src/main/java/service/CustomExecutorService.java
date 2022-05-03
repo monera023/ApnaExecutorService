@@ -20,6 +20,7 @@ public class CustomExecutorService implements  ExecutorService {
     @Override
     public void init() {
         long timeToSleep = 0;
+        System.out.println("Consumer thread::.." + Thread.currentThread().getName());
         while(true) {
             lock.lock();
             try {

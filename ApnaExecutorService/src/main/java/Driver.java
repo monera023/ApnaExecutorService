@@ -3,15 +3,19 @@ import service.CustomExecutorService;
 import java.util.concurrent.TimeUnit;
 
 public class Driver {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws InterruptedException {
         CustomExecutorService customExecutorService = new CustomExecutorService();
         customExecutorService.schedule(getRunnableTask("Task1"), 500, TimeUnit.MILLISECONDS, "Task1");
 
-        customExecutorService.schedule(getRunnableTask("Task2"), 3000, TimeUnit.MILLISECONDS, "Task2");
+//        customExecutorService.schedule(getRunnableTask("Task2"), 3000, TimeUnit.MILLISECONDS, "Task2");
 
-//        customExecutorService.scheduleAtFixedRate(getRunnableTask("Task3"), 2000, 2000, TimeUnit.MILLISECONDS, "Task3");
+        System.out.println("Producer thread::.." + Thread.currentThread().getName());
 
-        customExecutorService.init();
+        customExecutorService.scheduleAtFixedRate(getRunnableTask("Task3"), 2000, 2000, TimeUnit.MILLISECONDS, "Task3");
+
+        Thread consumer = new Thread(customExecutorService::init);
+        consumer.start();
+        
     }
 
     private static Runnable getRunnableTask(String task) {
