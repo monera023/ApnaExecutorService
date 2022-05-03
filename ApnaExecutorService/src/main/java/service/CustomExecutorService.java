@@ -16,6 +16,7 @@ public class CustomExecutorService implements  ExecutorService {
     private Lock lock = new ReentrantLock();
     private Condition newTaskAdded = lock.newCondition();
     private ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(10);
+    private volatile boolean shutdown = false;
 
     @Override
     public void init() {
@@ -24,6 +25,7 @@ public class CustomExecutorService implements  ExecutorService {
         while(true) {
             lock.lock();
             try {
+
                 while(taskQueue.isEmpty()) {
                     System.out.println("Queue empty..");
                     newTaskAdded.await();
@@ -67,6 +69,10 @@ public class CustomExecutorService implements  ExecutorService {
     public void schedule(Runnable command, long delay, TimeUnit unit, String taskId) {
         lock.lock();
         try {
+            if(shutdown) {
+                System.out.println("ExecutorService is shutdown for task.." + taskId);
+                return;
+            }
             long scheduledTime = System.currentTimeMillis() + unit.toMillis(delay);
             ScheduleTask task = new ScheduleTask(command, scheduledTime, 1, 0, 0, unit, taskId);
             taskQueue.add(task);
@@ -80,6 +86,10 @@ public class CustomExecutorService implements  ExecutorService {
     public void scheduleAtFixedRate(Runnable command, long initialDelay, long period, TimeUnit unit, String taskId) {
         lock.lock();
         try {
+            if(shutdown) {
+                System.out.println("ExecutorService is shutdown");
+                return;
+            }
             long scheduledTime = System.currentTimeMillis() + unit.toMillis(initialDelay);
             ScheduleTask task = new ScheduleTask(command, scheduledTime, 2, period, initialDelay, unit, taskId);
             taskQueue.add(task);
@@ -87,6 +97,11 @@ public class CustomExecutorService implements  ExecutorService {
         } finally {
             lock.unlock();
         }
+    }
+
+    @Override
+    public void shutDown() {
+        shutdown = true;
     }
 
 }

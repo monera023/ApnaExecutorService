@@ -8,4 +8,7 @@ public interface ExecutorService {
     void schedule(Runnable command, long delay, TimeUnit unit, String taskId);
 
     void scheduleAtFixedRate(Runnable command, long initialDelay, long period, TimeUnit unit, String taskId);
+
+    void shutDown();
+
 }
