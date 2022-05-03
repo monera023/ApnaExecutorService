@@ -17,9 +17,54 @@ public class CustomExecutorService implements  ExecutorService {
     private Condition newTaskAdded = lock.newCondition();
     private ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(10);
     private volatile boolean shutdown = false;
+    private Thread consumer;
 
     @Override
     public void init() {
+        consumer = new Thread(this::startConsumer);
+        consumer.start();
+    }
+
+    @Override
+    public void schedule(Runnable command, long delay, TimeUnit unit, String taskId) {
+        lock.lock();
+        try {
+            if(shutdown) {
+                System.out.println("ExecutorService is shutdown for task.." + taskId);
+                return;
+            }
+            long scheduledTime = System.currentTimeMillis() + unit.toMillis(delay);
+            ScheduleTask task = new ScheduleTask(command, scheduledTime, 1, 0, 0, unit, taskId);
+            taskQueue.add(task);
+            newTaskAdded.signalAll();
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    @Override
+    public void scheduleAtFixedRate(Runnable command, long initialDelay, long period, TimeUnit unit, String taskId) {
+        lock.lock();
+        try {
+            if(shutdown) {
+                System.out.println("ExecutorService is shutdown");
+                return;
+            }
+            long scheduledTime = System.currentTimeMillis() + unit.toMillis(initialDelay);
+            ScheduleTask task = new ScheduleTask(command, scheduledTime, 2, period, initialDelay, unit, taskId);
+            taskQueue.add(task);
+            newTaskAdded.signalAll();
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    @Override
+    public void shutDown() {
+        shutdown = true;
+    }
+
+    private void startConsumer() {
         long timeToSleep = 0;
         System.out.println("Consumer thread::.." + Thread.currentThread().getName());
         while(true) {
@@ -64,44 +109,4 @@ public class CustomExecutorService implements  ExecutorService {
             }
         }
     }
-
-    @Override
-    public void schedule(Runnable command, long delay, TimeUnit unit, String taskId) {
-        lock.lock();
-        try {
-            if(shutdown) {
-                System.out.println("ExecutorService is shutdown for task.." + taskId);
-                return;
-            }
-            long scheduledTime = System.currentTimeMillis() + unit.toMillis(delay);
-            ScheduleTask task = new ScheduleTask(command, scheduledTime, 1, 0, 0, unit, taskId);
-            taskQueue.add(task);
-            newTaskAdded.signalAll();
-        } finally {
-            lock.unlock();
-        }
-    }
-
-    @Override
-    public void scheduleAtFixedRate(Runnable command, long initialDelay, long period, TimeUnit unit, String taskId) {
-        lock.lock();
-        try {
-            if(shutdown) {
-                System.out.println("ExecutorService is shutdown");
-                return;
-            }
-            long scheduledTime = System.currentTimeMillis() + unit.toMillis(initialDelay);
-            ScheduleTask task = new ScheduleTask(command, scheduledTime, 2, period, initialDelay, unit, taskId);
-            taskQueue.add(task);
-            newTaskAdded.signalAll();
-        } finally {
-            lock.unlock();
-        }
-    }
-
-    @Override
-    public void shutDown() {
-        shutdown = true;
-    }
-
 }

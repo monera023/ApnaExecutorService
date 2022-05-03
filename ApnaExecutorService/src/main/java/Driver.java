@@ -7,8 +7,7 @@ public class Driver {
         CustomExecutorService customExecutorService = new CustomExecutorService();
         System.out.println("Producer thread::.." + Thread.currentThread().getName());
 
-        Thread consumer = new Thread(customExecutorService::init);
-        consumer.start();
+        customExecutorService.init();
 
         customExecutorService.schedule(getRunnableTask("Task1"), 3000, TimeUnit.MILLISECONDS, "Task1");
         customExecutorService.schedule(getRunnableTask("Task2"), 8000, TimeUnit.MILLISECONDS, "Task2");
